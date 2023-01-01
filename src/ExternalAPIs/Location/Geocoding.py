@@ -14,7 +14,7 @@ class InvalidResponse(Exception):
     """Invalid Response from Open Weather API."""
     pass
 
-class GeoCoderAPI():
+class Geocoder():
     def __init__(self):
         try:
             self.apikey = os.environ["OPEN_WEATHER_API_KEY"]
