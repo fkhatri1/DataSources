@@ -47,7 +47,7 @@ class Weather():
                 round(f.get("main").get("feels_like")),
                 f.get("clouds").get("all"),
                 int(f.get("pop") * 100),
-                round(f.get("rain", {}).get("3h", 0) * 0.0393701, 2), #covnert to inches
+                round(f.get("rain", {}).get("3h", 0) * 0.0393701, 2), #convert to inches
                 round(f.get("snow", {}).get("3h", 0) * 0.393701, 2), #convert to inches
                 round(f.get("wind").get("speed")),
                 round(f.get("wind").get("gust")),
@@ -55,3 +55,4 @@ class Weather():
             ))
             
         return forecasts
+       
