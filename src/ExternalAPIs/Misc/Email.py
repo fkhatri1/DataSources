@@ -5,13 +5,13 @@ from email.message import EmailMessage
 from typing import List
 
 class MissingGmailLogin(Exception):
-    """Gmail info Missing. Expecting key in env var GMAIL_API_KEY and email address in GMAIL_ACCOUNT."""
+    """Gmail info Missing. Expecting key in env var GOOGLE_API_KEY and email address in GMAIL_ACCOUNT."""
     pass
 
 class EmailClient():
     def __init__(self):
         try:
-            self.apikey = os.environ["GMAIL_API_KEY"]
+            self.apikey = os.environ["GOOGLE_API_KEY"]
             self.sender = os.environ["GMAIL_ACCOUNT"]
         except KeyError:
             raise MissingGmailLogin

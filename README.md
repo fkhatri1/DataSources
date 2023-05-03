@@ -1,12 +1,3 @@
 # ExternalAPIs
 
-Welcome to Nasdaq Data Link!
-YOUR API KEY IS:
-19aQz2Xx55mVA7kW4VL5
-
-curl https://data.nasdaq.com/api/v3/datasets/ML/AAAEY.json?rows=6&api_key=19aQz2Xx55mVA7kW4VL5
-
-NASDAQ_DATA_LINK_KEY=19aQz2Xx55mVA7kW4VL5
-FINNHUB_KEY=c2d0ksiad3ibl1b87ub0
-FINANCIAL_MODELING_PREP_KEY=e0ed6052477ed6f2212a4fe50b5ac6c0
-MARKETSTACK_KEY=c4a91bad585fb5b8b45ebb1a98c32378
+Collection of data sources
