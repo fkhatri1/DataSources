@@ -1,5 +1,5 @@
 [project]
-name = "ExternalAPIs"
+name = "DataSources"
 version = "0.0.1"
 authors = [
   { name="Faysal Khatri", email="faysalkhatri@gmail.com" },
