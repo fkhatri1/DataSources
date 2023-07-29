@@ -1,5 +1,5 @@
 [project]
-name = "DataSources"
+name = "OutsideWorld"
 version = "0.0.1"
 authors = [
   { name="Faysal Khatri", email="faysalkhatri@gmail.com" },
@@ -14,7 +14,7 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/fkhatri1/ExternalAPIs"
+"Homepage" = "https://github.com/fkhatri1/OutsideWorld"
 
 [build-system]
 requires = ["setuptools>=61.0"]
