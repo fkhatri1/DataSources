@@ -167,4 +167,13 @@ Upcoming and Recent EPS:
 
         return {"pe": ratios["peRatioTTM"], "dividend_yield": ratios["dividendYielPercentageTTM"]}
 
-    
+    def get_historical_cash_flow_statement(self, symbol) -> pd.DataFrame:
+        url = f"https://financialmodelingprep.com/api/v3/cash-flow-statement/{symbol}"
+        params = {}
+        params["period"] = "quarter"
+        params["limit"] = 400
+        params['apikey'] = self.financialmodelingprep_key
+        r = requests.get(url, params)
+        df = pd.json_normalize(r.json()).set_index(["date"])
+
+        return df
