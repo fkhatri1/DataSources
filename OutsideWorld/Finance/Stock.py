@@ -12,6 +12,9 @@ import json
 Profile = namedtuple("Profile", ['symbol', 'companyName', 'beta', 'div_pct', 'industry', 'website', 'description', 'sector', 'ipoDate', 'mktCap', 'volAvg'])
 Earnings = namedtuple("Earnings", ['date', 'estimate', 'actual', 'surprise', 'surprise_pct'])
 
+class NoDataException(Exception):
+    pass
+
 class Stock():
     def __init__(self):
         try:
@@ -174,6 +177,21 @@ Upcoming and Recent EPS:
         params["limit"] = 400
         params['apikey'] = self.financialmodelingprep_key
         r = requests.get(url, params)
-        df = pd.json_normalize(r.json()).set_index(["date"])
-
+        try:
+            df = pd.json_normalize(r.json()).set_index(["date"])
+        except Exception:
+            raise NoDataException
+        return df
+    
+    def get_historical_balance_sheet_statement(self, symbol) -> pd.DataFrame:
+        url = f"https://financialmodelingprep.com/api/v3/balance-sheet-statement/{symbol}"
+        params = {}
+        params["period"] = "quarter"
+        params["limit"] = 400
+        params['apikey'] = self.financialmodelingprep_key
+        r = requests.get(url, params)
+        try:
+            df = pd.json_normalize(r.json()).set_index(["date"])
+        except Exception:
+            raise NoDataException
         return df
