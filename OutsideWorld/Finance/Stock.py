@@ -56,6 +56,7 @@ class Stock:
             hist_json = r["historical"]
         except Exception as e:
             logging.warn(f"Error occurred getting history of {symbol}.")
+            logging.warn(f"Payload: {r}")
             raise e
         else:
             hist_df = pd.json_normalize(hist_json)
