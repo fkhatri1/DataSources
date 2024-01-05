@@ -4,9 +4,13 @@ version = "0.0.1"
 authors = [
   { name="Faysal Khatri", email="faysalkhatri@gmail.com" },
 ]
-description = "A package of various public APIs I use for my own projects."
+description = "A collection of integrations I use for my own projects."
 readme = "README.md"
 requires-python = ">=3.9"
+dependencies = [
+  "nasdaq-data-link >= 1.0.4",
+]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

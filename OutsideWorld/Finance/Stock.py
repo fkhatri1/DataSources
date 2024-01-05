@@ -2,12 +2,11 @@ from collections import namedtuple
 import requests
 import pandas as pd
 import numpy as np
-import pickle
 import finnhub
 import os
 from datetime import date, datetime, timedelta
 import logging
-import json
+from typing import List
 
 Profile = namedtuple(
     "Profile",
@@ -44,6 +43,25 @@ class Stock:
             self.finnhub_key = os.environ["FINNHUB_KEY"]
         except KeyError:
             raise ValueError("FINNHUB_KEY not found.")
+        
+    @staticmethod
+    def normalize_dates(dts: List[datetime]):
+        normal_dts = []
+        for d in dts:
+            if d.month in (3, 4, 5):
+                normal_dts.append(date(year=d.year, month=3, day=31))
+            elif d.month in (6, 7, 8):
+                normal_dts.append(date(year=d.year, month=6, day=30))
+            elif d.month in (9, 10, 11):
+                normal_dts.append(date(year=d.year, month=9, day=30))
+            elif d.month in (12,):
+                normal_dts.append(date(year=d.year, month=12, day=31))
+            elif d.month in (1, 2):
+                normal_dts.append(date(year=d.year-1, month=12, day=31))
+            else:
+                raise ValueError(f"Cannot interpret date: {d}")
+
+        return pd.to_datetime(normal_dts)
 
     def get_historical_ohlc(self, symbol, start="2021-01-01", end=str(date.today())):
         url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}"
@@ -74,6 +92,7 @@ class Stock:
             )
             hist_df = hist_df.sort_values("date", ascending=True)
             hist_df.set_index("date", drop=True, inplace=True)
+            hist_df.index = pd.to_datetime(hist_df.index)
             return hist_df
 
     def get_market_cap(self, symbol, _date=str(date.today())):
@@ -223,7 +242,8 @@ Upcoming and Recent EPS:
             "dividend_yield": ratios["dividendYielPercentageTTM"],
         }
 
-    def get_historical_cash_flow_statement(self, symbol) -> pd.DataFrame:
+    def get_historical_cash_flow_statement(self, symbol, start_date) -> pd.DataFrame:
+        start_date = pd.to_datetime(start_date) - timedelta(days = 10)
         url = f"https://financialmodelingprep.com/api/v3/cash-flow-statement/{symbol}"
         params = {}
         params["period"] = "quarter"
@@ -231,7 +251,12 @@ Upcoming and Recent EPS:
         params["apikey"] = self.financialmodelingprep_key
         r = requests.get(url, params)
         try:
-            df = pd.json_normalize(r.json()).set_index(["date"])
+            df = pd.json_normalize(r.json())
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.sort_values("date", ascending=True)
+            df = df[df["date"] >= start_date]
+            df = df.set_index(["date"])
+            df.index = Stock.normalize_dates(df.index)
         except Exception:
             raise NoDataException
         return df
@@ -247,6 +272,8 @@ Upcoming and Recent EPS:
         r = requests.get(url, params)
         try:
             df = pd.json_normalize(r.json()).set_index(["date"])
+            df.index = pd.to_datetime(df.index)
+            df.index = Stock.normalize_dates(df.index)
         except Exception:
             raise NoDataException
         return df
@@ -260,18 +287,24 @@ Upcoming and Recent EPS:
         r = requests.get(url, params)
         try:
             df = pd.json_normalize(r.json()).set_index(["date"])
+            df.index = pd.to_datetime(df.index)
+            df.index = Stock.normalize_dates(df.index)
         except Exception:
             raise NoDataException
         return df
 
-    def get_historical_market_cap(self, symbol) -> pd.DataFrame:
+    def get_historical_market_cap(self, symbol, start_date) -> pd.DataFrame:
         url = f"https://financialmodelingprep.com/api/v3/historical-market-capitalization/{symbol}"
         params = {}
         params["limit"] = 8000
         params["apikey"] = self.financialmodelingprep_key
         r = requests.get(url, params)
         try:
-            df = pd.json_normalize(r.json()).set_index(["date"])
+            df = pd.json_normalize(r.json())
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.sort_values("date", ascending=True)
+            df = df[df["date"] >= start_date]
+            df = df.set_index(["date"])
         except Exception:
             raise NoDataException
         return df
