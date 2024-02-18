@@ -39,6 +39,7 @@ class Screener():
             #api call to financialmodelingprep stock screener 
             url = f"https://financialmodelingprep.com/api/v3/stock-screener"
             params = {}
+            params["limit"] = 50000
             if criteria.country is not None:
                 params['country'] = criteria.country
             if criteria.min_market_cap is not None:
@@ -55,7 +56,8 @@ class Screener():
                 params['isActivelyTrading'] = criteria.is_actively_trading
 
             params['apikey'] = self.apikey
-            params['exchange'] = "NASDAQ,NYSE"
+            #params['exchange'] = "NASDAQ,NYSE"
+            params['betaMoreThan'] = 0.9
 
             result_set_raw = requests.get(url, params).json()
             result_set = []

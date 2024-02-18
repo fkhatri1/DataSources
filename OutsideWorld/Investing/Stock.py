@@ -243,7 +243,20 @@ Upcoming and Recent EPS:
         }
 
     def get_historical_cash_flow_statement(self, symbol, start_date) -> pd.DataFrame:
-        start_date = pd.to_datetime(start_date) - timedelta(days = 10)
+        CASH_FLOW_COLS = [
+            "operatingCashFlow",
+            "freeCashFlow",
+            "debtRepayment",
+            "commonStockRepurchased",
+            "dividendsPaid",
+            "depreciationAndAmortization",
+            "capitalExpenditure",
+            "changeInWorkingCapital",
+            "netIncome"
+        ]
+
+
+        start_date = pd.to_datetime(start_date) - timedelta(weeks=104)
         url = f"https://financialmodelingprep.com/api/v3/cash-flow-statement/{symbol}"
         params = {}
         params["period"] = "quarter"
@@ -252,16 +265,48 @@ Upcoming and Recent EPS:
         r = requests.get(url, params)
         try:
             df = pd.json_normalize(r.json())
-            df["date"] = pd.to_datetime(df["date"])
+            df["date"] = pd.to_datetime(df["fillingDate"])
             df = df.sort_values("date", ascending=True)
             df = df[df["date"] >= start_date]
             df = df.set_index(["date"])
-            df.index = Stock.normalize_dates(df.index)
+            df = df[CASH_FLOW_COLS]
+
+            # annualize
+            for c in CASH_FLOW_COLS:
+                df[c] = df[c].rolling(4).sum()
         except Exception:
             raise NoDataException
+        
+        # derived cols
+        df["reinvestment"] = -1 * (df["depreciationAndAmortization"] + df["capitalExpenditure"] + df["changeInWorkingCapital"])
+        df["owners_earnings"] = df["netIncome"] - df["reinvestment"]
+        df["owners_earnings_lag_1"] = df["owners_earnings"].shift(1)
+        df["owners_earnings_lag_2"] = df["owners_earnings"].shift(2)
+        df["owners_earnings_qoq_growth"] = (df["owners_earnings"] - df["owners_earnings_lag_1"])/ df["owners_earnings_lag_1"]
+        df["owners_earnings_qoq_growth_lag_1"] = (df["owners_earnings_lag_1"] - df["owners_earnings_lag_2"]) / df["owners_earnings_lag_2"]
+
+        df["net_income_lag_1"] = df["netIncome"].shift(1)
+        df["net_income_lag_2"] = df["netIncome"].shift(2)
+        
         return df
 
-    def get_historical_balance_sheet_statement(self, symbol) -> pd.DataFrame:
+    def get_historical_balance_sheet_statement(self, symbol, start_date) -> pd.DataFrame:
+        BALANCE_SHEET_COLS = [
+            "cashAndCashEquivalents",
+            "totalAssets",
+            "goodwillAndIntangibleAssets",
+            "totalDebt", 
+            "netDebt",
+            "totalStockholdersEquity",
+            "totalCurrentAssets",
+            "totalCurrentLiabilities",
+            "totalEquity",
+            "accountPayables",
+            "taxPayables",
+            "cashAndShortTermInvestments"
+        ]
+
+        start_date = pd.to_datetime(start_date) - timedelta(weeks=104)
         url = (
             f"https://financialmodelingprep.com/api/v3/balance-sheet-statement/{symbol}"
         )
@@ -271,14 +316,32 @@ Upcoming and Recent EPS:
         params["apikey"] = self.financialmodelingprep_key
         r = requests.get(url, params)
         try:
-            df = pd.json_normalize(r.json()).set_index(["date"])
-            df.index = pd.to_datetime(df.index)
-            df.index = Stock.normalize_dates(df.index)
+            df = pd.json_normalize(r.json())
+            df["date"] = pd.to_datetime(df["fillingDate"])
+            df = df.sort_values("date", ascending=True)
+            df = df[df["date"] >= start_date]
+            df = df.set_index(["date"])
+            df = df[BALANCE_SHEET_COLS]
         except Exception:
             raise NoDataException
+        
         return df
 
-    def get_historical_income_statement(self, symbol) -> pd.DataFrame:
+    def get_historical_income_statement(self, symbol, start_date) -> pd.DataFrame:
+        INCOME_COLS = [
+            "revenue", 
+            "costOfRevenue",
+            "grossProfit",
+            "operatingExpenses",
+            "ebitda", 
+            "eps",
+            "incomeBeforeTax",
+            "incomeTaxExpense",
+            "depreciationAndAmortization"
+        ]
+        
+        #annualized
+        start_date = pd.to_datetime(start_date) - timedelta(weeks=208)
         url = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}"
         params = {}
         params["period"] = "quarter"
@@ -286,11 +349,32 @@ Upcoming and Recent EPS:
         params["apikey"] = self.financialmodelingprep_key
         r = requests.get(url, params)
         try:
-            df = pd.json_normalize(r.json()).set_index(["date"])
-            df.index = pd.to_datetime(df.index)
-            df.index = Stock.normalize_dates(df.index)
+            df = pd.json_normalize(r.json())
+            df["date"] = pd.to_datetime(df["fillingDate"])
+            df = df.sort_values("date", ascending=True)
+            df = df[df["date"] >= start_date]
+            df = df.set_index(["date"])
+            df = df[INCOME_COLS]
+
+            # annualize
+            for c in INCOME_COLS:
+                df[c] = df[c].rolling(4).sum()
+
         except Exception:
             raise NoDataException
+        
+        # derived cols
+        df["atoi"] = df["ebitda"] + df["depreciationAndAmortization"] - df["incomeTaxExpense"]
+        df["atoi_lag_1"] = df["atoi"].shift(1)
+        df["atoi_lag_2"] = df["atoi"].shift(2)
+        df["atoi_qoq_growth"] = (df["atoi"] - df["atoi_lag_1"]) / df["atoi_lag_1"]
+        df["atoi_qoq_growth_lag_1"] = (df["atoi_lag_1"] - df["atoi_lag_2"])/ df["atoi_lag_2"]
+
+        df["revenue_lag_1"] = df["revenue"].shift(1)
+        df["revenue_lag_2"] = df["revenue"].shift(2)
+
+        df["eps_growth_annual"] = ((df["eps"] - df["eps"].shift(4))/ df["eps"].shift(4)) * 100
+        
         return df
 
     def get_historical_market_cap(self, symbol, start_date) -> pd.DataFrame:
@@ -308,3 +392,15 @@ Upcoming and Recent EPS:
         except Exception:
             raise NoDataException
         return df
+
+    def get_earnings_call_transcript(self, symbol, year, quarter) -> str:
+        url = f"https://financialmodelingprep.com/api/v3/earning_call_transcript/{symbol}"
+        params = {}
+        params["year"] = year
+        params["quarter"] = quarter
+        params["apikey"] = self.financialmodelingprep_key
+
+        r = requests.get(url, params)
+        
+        res = r.json()[0]
+        return res["content"]
